@@ -384,6 +384,3 @@ CLEARSCREEN <- function(){
   
   HOME()
 }
-
-#Comment from Luca
-#Comment 2 from Luca
