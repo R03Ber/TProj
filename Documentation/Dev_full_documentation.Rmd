@@ -1,0 +1,907 @@
+---
+title: "Dev_full_documentation"
+author: "Roy"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+# Overview - Base Functions
+
+**CLEARSCREEN** - Clear the screen. (Shorthand: **CS**) -\> DONE
+
+**HIDETURTLE** - Don't show the turtle cursor. (**HT**) -\> DONE
+
+**SHOWTURTLE** - Show the turtle cursor. (**ST**) -\> DONE
+
+**HOME** - Move back to the home position. -\> DONE
+
+**FORWARD** *steps* - Move forward *steps*. (**FD**) -\> DONE
+
+**BACK** *steps* - Move back *steps*. (**BK**) -\> DONE
+
+**LEFT** *degrees* - Turn left this many degrees. Negative degrees work too, they'll turn it right. (**LT**) -\> DONE
+
+**RIGHT** *degrees* - Turn right this many degrees. (**RT**) -\> DONE
+
+**SETHEADING** *degrees* - Turn to an absolute heading of *degrees*. (**SETH**) -\> DONE
+
+**SETPOS** [*x y*] - Set the position to *x, y* coordinates. These are Cartesian, so 0,0 is the middle of the screen. -\> DONE
+
+**SETX** *x* - Set the horizontal position to *x*. -\> DONE
+
+**SETY** *y* - Set the vertical position to *y*. -\> DONE
+
+## Requirements
+
+### Environment
+
+-   Draw plot
+-   Remember certain plot elements
+-   Redraw plot
+
+### Turtle
+
+-   Write and remember location
+-   Move in any direction
+    -   Angles using the angle-function are revolving (i.e. 362 degrees are the same as 2 degrees)
+-   Move backwards and forwards
+-   Jump to any location
+-   Draw between locations
+
+### Figuring out
+
+-   Write every piece of information about the turtle, location, etc. in a list
+-   Write list in a document
+-   Have the code access the document at the right position for the different functions
+
+# Functions
+
+## List document
+
+```{r}
+state <- list(
+  x = c(0),
+  y = c(0),
+  angle = c(0)
+)
+```
+
+### Append list elements
+
+```{r}
+state$x <- append(state$x, c(2, 4, 5, 6))
+
+```
+
+### Read previous state
+
+```{r}
+state$x[[length(state$x)-1]]
+```
+
+#### Also works for any previous state
+
+```{r}
+state$x <- append(state$x, c(2, 3, 3, 8))
+state$y <- append(state$y, c(2,4, 5, 6, 2, 3, 3, 8))
+
+state$x[[length(state$x)-1*3]]
+state$x[[length(state$x)-1*2]]
+state$x[[length(state$x)-1*0]]
+```
+
+### Resulting Functions
+
+Access current location of turtle:
+
+```{r}
+current_location <- function(){
+  x <- state$x[[length(state$x)]]
+  y <- state$y[[length(state$y)]]
+  return(c(x, y))
+}
+current_location()
+```
+
+Access previous location of turtle OR any specified previous location (argument is *n* of steps back in location history):
+
+```{r}
+state
+
+previous_location <- function(n_back){
+  if(missing(n_back)){
+    x <- state$x[[length(state$x)-1]]
+    y <- state$y[[length(state$y)-1]]
+    return(c( x, y))
+  }
+  else{
+    x <- state$x[[length(state$x)-1*n_back]]
+    y <- state$y[[length(state$y)-1*n_back]]
+    return(c(x, y))
+  }
+}
+previous_location()
+previous_location(4)
+```
+
+Update current location (can also read a vector of x and y coordinates such as output by *current_function(),* etc.):
+
+```{r}
+SETPOS <- function(x_coords, y_coords){
+  if(missing(y_coords)){
+    state$x <- append(state$x, x_coords[1])
+    state$y <- append(state$y, x_coords[2])
+    return(list(x = state$x, y = state$y))
+  }else{
+    state$x <- append(state$x, x_coords)
+    state$y <- append(state$y, y_coords)
+    return(list(x = state$x, y = state$y))
+  }
+}
+SETPOS(1, 1)
+SETPOS(previous_location())
+
+state$x <- SETPOS(previous_location())$x
+state$y <- SETPOS(1, 1)$y
+
+state
+```
+
+Reset position to middle of screen:
+
+```{r}
+HOME <- function(){
+  SETPOS(0, 0)
+}
+
+state$x <- HOME()$x
+state$y <- HOME()$y
+
+state
+```
+
+Set horizontal position to an absolute value of *n* (i.e. jump horizontally):
+
+```{r}
+SETX <- function(x_coord){
+  state$x <- append(state$x, x_coord)
+  state$y <- append(state$y, state$y[[length(state$y)]])
+  return(list(x = state$x, y = state$y))
+}
+
+state$x <- SETX(-2)$x
+state$y <- SETX(-2)$y
+
+state
+```
+
+Set vertical position to an absolute value of *n* (i.e. jump vertically):
+
+```{r}
+SETY <- function(y_coord){
+  state$x <- append(state$x, state$x[[length(state$x)]])
+  state$y <- append(state$y, y_coord)
+  return(list(x = state$x, y = state$y))
+}
+
+state$x <- SETY(4)$x
+state$y <- SETY(4)$y
+
+state
+```
+
+Return current angle:
+
+```{r}
+HEADING <- function(){
+  return(state$angle[[length(state$angle)]])
+}
+```
+
+Change absolute angle/direction:
+
+```{r}
+SETHEADING <- function(degrees){
+  state$angle <- append(state$angle, degrees%%360)
+  #return(paste("Changed angle to", degrees, "degrees."))
+  return(angle = state$angle)
+}
+
+state$angle <- SETHEADING(20)
+
+state$angle
+```
+
+\*the term *%%360* is not necessary, from a mathematical perspective, because cos(x) and sin(x) agnostic to any number above 360° or below 0° however, it is an easier to read and comprehend absolute output.
+
+Turn right by *n* degrees:
+
+```{r}
+RIGHT <- function(n_degrees_to_turn){
+  state$angle <- append(state$angle, (state$angle[[length(state$angle)]]-n_degrees_to_turn)%%360)
+  return(angle = state$angle)
+}
+
+state$angle <- RIGHT(30)
+
+state$angle
+```
+
+Turn left by *n* degrees:
+
+```{r}
+LEFT <- function(n_degrees_to_turn){
+  state$angle <- append(state$angle, (state$angle[[length(state$angle)]]+n_degrees_to_turn)%%360)
+  return(angle = state$angle)
+}
+
+state$angle <- LEFT(30)
+
+state$angle
+```
+
+Move forward by *n* steps:
+
+```{r}
+FORWARD <- function(n_steps){
+  if(missing(n_steps)){
+    new_x = state$x[[length(state$x)]]+1*cos(state$angle[[length(state$angle)]]*(pi/180))
+    new_y = state$y[[length(state$y)]]+1*sin(state$angle[[length(state$angle)]]*(pi/180))
+  }else{
+    new_x = state$x[[length(state$x)]]+n_steps*cos(state$angle[[length(state$angle)]]*(pi/180))
+    new_y = state$y[[length(state$y)]]+n_steps*sin(state$angle[[length(state$angle)]]*(pi/180))
+  }
+  SETPOS(new_x, new_y)
+}
+
+FORWARD(2)
+```
+
+Move backwards by *n* steps:
+
+```{r}
+BACK <- function(n_steps){
+  if(missing(n_steps)){
+    new_x = state$x[[length(state$x)]]-1*cos(state$angle[[length(state$angle)]]*(pi/180))
+    new_y = state$y[[length(state$y)]]-1*sin(state$angle[[length(state$angle)]]*(pi/180))
+  }else{
+    new_x = state$x[[length(state$x)]]-n_steps*cos(state$angle[[length(state$angle)]]*(pi/180))
+    new_y = state$y[[length(state$y)]]-n_steps*sin(state$angle[[length(state$angle)]]*(pi/180))
+  }
+  SETPOS(new_x, new_y)
+}
+
+BACK(7)
+```
+
+## Plot
+
+### Draw a blank canvas
+
+```{r}
+CLEARSCREEN <- function(){
+  plot.new()
+  plot.window(xlim = c(-50, 50), ylim = c(-50, 50), pty = "s")
+  
+  state$plot_records[[length(state$plot_records)+1]] <- recordPlot()
+}
+
+CLEARSCREEN()
+```
+
+### Draw a directional object
+
+Turtle:
+
+```{r}
+  TURTLE <- function(){
+    if(state$angle[[length(state$angle)]]==90){
+      arrows(
+        state$x[[length(state$x)]],
+        state$y[[length(state$y)]]-0.02,
+        x1 = state$x[[length(state$x)]],
+        y1 = state$y[[length(state$y)]]+0.02,
+        angle = 65,
+        length = 0.1, lwd = 9, col = "darkslategrey", code = 3
+        )
+      arrows(
+        state$x[[length(state$x)]],
+        state$y[[length(state$y)]],
+        x1 = state$x[[length(state$x)]],
+        y1 = state$y[[length(state$y)]]+0.9,
+        length = 0, lwd = 12, col = "olivedrab4"
+        )
+      arrows(
+        state$x[[length(state$x)]],
+        state$y[[length(state$y)]]-1,
+        x1 = state$x[[length(state$x)]],
+        y1 = state$y[[length(state$y)]],
+        length = 0, lwd = 7, col = "darkslategrey", code = 1
+        )
+      points(
+        state$x[[length(state$x)]],
+        state$y[[length(state$y)]],
+        pch = 19, cex = 2.5, col = "darkgreen"
+        )
+      points(
+        state$x[[length(state$x)]],
+        state$y[[length(state$y)]],
+        pch = 5, cex = 1.75, col = "black"
+        )
+      points(
+        state$x[[length(state$x)]],
+        state$y[[length(state$y)]],
+        pch = 10, cex = 2.5, col = "black"
+        )
+    }else if(state$angle[[length(state$angle)]]==270){
+      arrows(
+        state$x[[length(state$x)]],
+        state$y[[length(state$y)]]+0.02,
+        x1 = state$x[[length(state$x)]],
+        y1 = state$y[[length(state$y)]]-0.02,
+        angle = 65,
+        length = 0.1, lwd = 9, col = "darkslategrey", code = 3
+        )
+      arrows(
+        state$x[[length(state$x)]],
+        state$y[[length(state$y)]],
+        x1 = state$x[[length(state$x)]],
+        y1 = state$y[[length(state$y)]]-0.9,
+        length = 0, lwd = 12, col = "olivedrab4"
+        )
+      arrows(
+        state$x[[length(state$x)]],
+        state$y[[length(state$y)]]+1,
+        x1 = state$x[[length(state$x)]],
+        y1 = state$y[[length(state$y)]],
+        length = 0, lwd = 7, col = "darkslategrey", code = 1
+        )
+      points(
+        state$x[[length(state$x)]],
+        state$y[[length(state$y)]],
+        pch = 19, cex = 2.5, col = "darkgreen"
+        )
+      points(
+        state$x[[length(state$x)]],
+        state$y[[length(state$y)]],
+        pch = 5, cex = 1.75, col = "black"
+        )
+      points(
+        state$x[[length(state$x)]],
+        state$y[[length(state$y)]],
+        pch = 10, cex = 2.5, col = "black"
+        )
+    }else{
+      arrows(state$x[[length(state$x)]]-0.02*cos(state$angle[[length(state$angle)]]*(pi/180)),
+             state$y[[length(state$y)]]-0.02*sin(state$angle[[length(state$angle)]]*(pi/180)),
+             x1 = state$x[[length(state$x)]]+0.02*cos(state$angle[[length(state$angle)]]*(pi/180)),
+             y1 = state$y[[length(state$y)]]+0.02*sin(state$angle[[length(state$angle)]]*(pi/180)),
+             angle = 65,
+           length = 0.1, lwd = 9, col = "darkslategrey", code = 3)
+    arrows(state$x[[length(state$x)]],
+           state$y[[length(state$y)]],
+           x1 = state$x[[length(state$x)]]+0.85*cos(state$angle[[length(state$angle)]]*(pi/180)),
+           y1 = state$y[[length(state$y)]]+0.85*sin(state$angle[[length(state$angle)]]*(pi/180)),
+           length = 0, lwd = 12, col = "olivedrab4")
+    arrows(state$x[[length(state$x)]]-1*cos(state$angle[[length(state$angle)]]*(pi/180)),
+           state$y[[length(state$y)]]-1*sin(state$angle[[length(state$angle)]]*(pi/180)),
+           x1 = state$x[[length(state$x)]],
+           y1 = state$y[[length(state$y)]],
+           length = 0, lwd = 7, col = "darkslategrey", code = 1)
+    points(
+      state$x[[length(state$x)]],
+      state$y[[length(state$y)]],
+      pch = 19, cex = 2.5, col = "darkgreen"
+      )
+    points(
+      state$x[[length(state$x)]],
+      state$y[[length(state$y)]],
+      pch = 5, cex = 1.75, col = "black"
+      )
+    points(
+      state$x[[length(state$x)]],
+      state$y[[length(state$y)]],
+      pch = 10, cex = 2.5, col = "black"
+      )
+  }
+}
+
+plot.new()
+plot.window(xlim = c(-50, 50), ylim = c(-50, 50), pty = "s")
+
+TURTLE()
+```
+
+Hideturtle / Showturtle
+
+```{r}
+SHOWTURTLE <- function(){
+  state$drawturtle <- 1
+}
+
+HIDETURTLE <- function(){
+  state$drawturtle <- 0
+}
+```
+
+### Trace Movement / Draw
+
+```{r}
+plot.new()
+plot.window(xlim = c(-50, 50), ylim = c(-50, 50), pty = "s")
+
+TRACE <- function(){
+  lines(c(state$x[[length(state$x)-1]], state$x[[length(state$x)]]), 
+        c(state$y[[length(state$y)-1]], state$y[[length(state$y)]]), lwd = 2)
+}
+
+TRACE()
+
+```
+
+### Redraw plot
+
+```{r}
+PATH_RECALL <- function(){
+  return(state$plot_records[[length(state$plot_records)]])
+}
+
+PATH_RECALL()
+```
+
+# Integration for full functionality
+
+```{r BIOME}
+BIOME <- new.env()
+
+BIOME$state <- list()
+BIOME$savestate <- list()
+```
+
+```{r HELLO}
+HELLO <- function(){
+  state <- BIOME$state
+  
+  state$x <- list(0)
+  state$y <- list(0)
+  state$angle <- list(90)
+  state$drawturtle <- list(1)
+  
+  plot.new()
+  plot.window(xlim = c(-50, 50), ylim = c(-50, 50), pty = "s")
+  
+  state$plot_records[[1]] <- recordPlot()
+  
+  state$savemode <- "OFF"
+  
+  BIOME$state <- state
+}
+```
+
+```{r REMEMBER}
+REMEMBER <- function(){
+  state <- BIOME$state
+  
+  state$plot_records[[length(state$plot_records)+1]] <- recordPlot()
+  
+  BIOME$state <- state
+}
+```
+
+```{r DEJAVU}
+DEJAVU <- function(){
+  state <- BIOME$state
+  
+  replayPlot(state$plot_records[[length(state$plot_records)]])
+}
+```
+
+```{r SHOWTURTLE}
+SHOWTURTLE <- function(){
+  state <- BIOME$state
+  
+  state$drawturtle <- 1
+  
+  BIOME$state <- state
+  
+  return("Turtle is now awake!")
+}
+```
+
+```{r HIDETURTLE}
+HIDETURTLE <- function(){
+  state <- BIOME$state
+  
+  state$drawturtle <- 0
+  
+  BIOME$state <- state
+  
+  return("Turtle is now asleep!")
+}
+```
+
+```{r TURTLE}
+TURTLE <- function(){
+  state <- BIOME$state
+  
+  if(state$drawturtle == 1){
+    if(state$angle[[length(state$angle)]]==90){
+      arrows(
+        state$x[[length(state$x)]],
+        state$y[[length(state$y)]]-0.02,
+        x1 = state$x[[length(state$x)]],
+        y1 = state$y[[length(state$y)]]+0.02,
+        angle = 65,
+        length = 0.1, lwd = 9, col = "darkslategrey", code = 3
+        )
+      arrows(
+        state$x[[length(state$x)]],
+        state$y[[length(state$y)]],
+        x1 = state$x[[length(state$x)]],
+        y1 = state$y[[length(state$y)]]+0.9,
+        length = 0, lwd = 12, col = "olivedrab4"
+        )
+      arrows(
+        state$x[[length(state$x)]],
+        state$y[[length(state$y)]]-1,
+        x1 = state$x[[length(state$x)]],
+        y1 = state$y[[length(state$y)]],
+        length = 0, lwd = 7, col = "darkslategrey", code = 1
+        )
+      points(
+        state$x[[length(state$x)]],
+        state$y[[length(state$y)]],
+        pch = 19, cex = 2.5, col = "darkgreen"
+        )
+      points(
+        state$x[[length(state$x)]],
+        state$y[[length(state$y)]],
+        pch = 5, cex = 1.75, col = "black"
+        )
+      points(
+        state$x[[length(state$x)]],
+        state$y[[length(state$y)]],
+        pch = 10, cex = 2.5, col = "black"
+        )
+    }else if(state$angle[[length(state$angle)]]==270){
+      arrows(
+        state$x[[length(state$x)]],
+        state$y[[length(state$y)]]+0.02,
+        x1 = state$x[[length(state$x)]],
+        y1 = state$y[[length(state$y)]]-0.02,
+        angle = 65,
+        length = 0.1, lwd = 9, col = "darkslategrey", code = 3
+        )
+      arrows(
+        state$x[[length(state$x)]],
+        state$y[[length(state$y)]],
+        x1 = state$x[[length(state$x)]],
+        y1 = state$y[[length(state$y)]]-0.9,
+        length = 0, lwd = 12, col = "olivedrab4"
+        )
+      arrows(
+        state$x[[length(state$x)]],
+        state$y[[length(state$y)]]+1,
+        x1 = state$x[[length(state$x)]],
+        y1 = state$y[[length(state$y)]],
+        length = 0, lwd = 7, col = "darkslategrey", code = 1
+        )
+      points(
+        state$x[[length(state$x)]],
+        state$y[[length(state$y)]],
+        pch = 19, cex = 2.5, col = "darkgreen"
+        )
+      points(
+        state$x[[length(state$x)]],
+        state$y[[length(state$y)]],
+        pch = 5, cex = 1.75, col = "black"
+        )
+      points(
+        state$x[[length(state$x)]],
+        state$y[[length(state$y)]],
+        pch = 10, cex = 2.5, col = "black"
+        )
+    }else{
+      arrows(state$x[[length(state$x)]]-0.02*cos(state$angle[[length(state$angle)]]*(pi/180)),
+             state$y[[length(state$y)]]-0.02*sin(state$angle[[length(state$angle)]]*(pi/180)),
+             x1 = state$x[[length(state$x)]]+0.02*cos(state$angle[[length(state$angle)]]*(pi/180)),
+             y1 = state$y[[length(state$y)]]+0.02*sin(state$angle[[length(state$angle)]]*(pi/180)),
+             angle = 65,
+           length = 0.1, lwd = 9, col = "darkslategrey", code = 3)
+    arrows(state$x[[length(state$x)]],
+           state$y[[length(state$y)]],
+           x1 = state$x[[length(state$x)]]+0.85*cos(state$angle[[length(state$angle)]]*(pi/180)),
+           y1 = state$y[[length(state$y)]]+0.85*sin(state$angle[[length(state$angle)]]*(pi/180)),
+           length = 0, lwd = 12, col = "olivedrab4")
+    arrows(state$x[[length(state$x)]]-1*cos(state$angle[[length(state$angle)]]*(pi/180)),
+           state$y[[length(state$y)]]-1*sin(state$angle[[length(state$angle)]]*(pi/180)),
+           x1 = state$x[[length(state$x)]],
+           y1 = state$y[[length(state$y)]],
+           length = 0, lwd = 7, col = "darkslategrey", code = 1)
+    points(
+      state$x[[length(state$x)]],
+      state$y[[length(state$y)]],
+      pch = 19, cex = 2.5, col = "darkgreen"
+      )
+    points(
+      state$x[[length(state$x)]],
+      state$y[[length(state$y)]],
+      pch = 5, cex = 1.75, col = "black"
+      )
+    points(
+      state$x[[length(state$x)]],
+      state$y[[length(state$y)]],
+      pch = 10, cex = 2.5, col = "black"
+      )
+  }}
+}
+```
+
+```{r TRACE}
+TRACE <- function(){
+  state <- BIOME$state
+  
+  lines(c(state$x[[length(state$x)-1]], state$x[[length(state$x)]]), 
+        c(state$y[[length(state$y)-1]], state$y[[length(state$y)]]),
+        lwd = 2)
+}
+```
+
+```{r WHERE}
+WHERE <- function(){
+  state <- BIOME$state
+  
+  x <- state$x[[length(state$x)]]
+  y <- state$y[[length(state$y)]]
+  return(c(x, y))
+}
+```
+
+```{r PREVIOUS}
+PREVIOUS <- function(n_back){
+  state <- BIOME$state
+  
+  if(length(state$x)<=1){
+    return("The Turtle is still in it's shell")
+  }
+  else if(missing(n_back)){
+    x <- state$x[[length(state$x)-1]]
+    y <- state$y[[length(state$y)-1]]
+    return(c( x, y))
+  }
+  else{
+    x <- state$x[[length(state$x)-1*n_back]]
+    y <- state$y[[length(state$y)-1*n_back]]
+    return(c(x, y))
+  }
+}
+```
+
+```{r SETPOS}
+SETPOS <- function(x_coords, y_coords){
+  state <- BIOME$state
+  
+  if(missing(y_coords)){
+    state$x <- append(state$x, x_coords[1])
+    state$y <- append(state$y, x_coords[2])
+  }else{
+    state$x <- append(state$x, x_coords)
+    state$y <- append(state$y, y_coords)
+  }
+  
+  BIOME$state <- state
+  
+  DEJAVU()
+  TURTLE()
+  
+  return(list(x = state$x[[length(state$x)]], y = state$y[[length(state$y)]]))
+}
+```
+
+```{r HOME}
+HOME <- function(){
+  state <- BIOME$state
+  
+  state$x[[length(state$x)+1]] <- 0
+  state$y[[length(state$y)+1]] <- 0
+  
+  BIOME$state <- state
+  
+  DEJAVU()
+  TURTLE()
+  
+  return(list(x = state$x[[length(state$x)]], y = state$y[[length(state$y)]]))
+}
+```
+
+```{r SETX}
+SETX <- function(x_coord){
+  state <- BIOME$state
+  
+  state$x <- append(state$x, x_coord)
+  state$y <- append(state$y, state$y[[length(state$y)]])
+  
+  BIOME$state <- state
+  
+  DEJAVU()
+  TURTLE()
+  
+  return(list(x = state$x[[length(state$x)]], y = state$y[[length(state$y)]]))
+}
+```
+
+```{r SETY}
+SETY <- function(y_coord){
+  state <- BIOME$state
+  
+  state$x <- append(state$x, state$x[[length(state$x)]])
+  state$y <- append(state$y, y_coord)
+  
+  BIOME$state <- state
+  
+  DEJAVU()
+  TURTLE()
+  
+  return(list(x = state$x[[length(state$x)]], y = state$y[[length(state$y)]]))
+}
+```
+
+```{r HEADING}
+HEADING <- function(){
+  state <- BIOME$state
+  
+  return(paste("Turtle is currently facing", state$angle[[length(state$angle)]],
+               "degrees!"))
+}
+```
+
+```{r SETHEADING}
+SETHEADING <- function(degrees){
+  state <- BIOME$state
+  
+  state$angle <- append(state$angle, degrees%%360)
+  
+  BIOME$state <- state
+  
+  DEJAVU()
+  TURTLE()
+  
+  return(paste("Turtle has turned to", state$angle[[length(state$angle)]], "degrees!"))
+}
+```
+
+```{r RIGHT}
+RIGHT <- function(n_degrees_to_turn){
+  state <- BIOME$state
+  
+  state$angle <- append(state$angle,
+                        (state$angle[[length(state$angle)]]
+                         -n_degrees_to_turn)%%360)
+  
+  BIOME$state <- state
+  
+  DEJAVU()
+  TURTLE()
+  
+  return(paste("Turtle has turned", n_degrees_to_turn, "degrees to the right and is now facing", state$angle[[length(state$angle)]], "degrees!"))
+}
+```
+
+```{r LEFT}
+LEFT <- function(n_degrees_to_turn){
+  state <- BIOME$state
+  
+  state$angle <- append(state$angle,
+                        (state$angle[[length(state$angle)]]
+                         +n_degrees_to_turn)%%360)
+  
+  BIOME$state <- state
+  
+  DEJAVU()
+  TURTLE()
+  
+  return(paste("Turtle has turned", n_degrees_to_turn, "degrees to the left and is now facing", state$angle[[length(state$angle)]], "degrees!"))
+}
+```
+
+```{r FORWARD}
+FORWARD<- function(n){
+  state <- BIOME$state
+  DEJAVU()
+  RAD <- state$angle[[length(state$angle)]]*(pi/180)
+  
+  if(missing(n)){
+    state$x[[length(state$x)+1]] <- state$x[[length(state$x)]]+cos(RAD)
+    state$y[[length(state$y)+1]] <- state$y[[length(state$y)]]+sin(RAD)
+  }else{
+    state$x[[length(state$x)+1]] <- state$x[[length(state$x)]]+n*cos(RAD)
+    state$y[[length(state$y)+1]] <- state$y[[length(state$y)]]+n*sin(RAD)
+  }
+  BIOME$state <- state
+  TRACE()
+  REMEMBER()
+  TURTLE()
+}
+```
+
+```{r BACK}
+BACK <- function(n){
+  state <- BIOME$state
+  DEJAVU()
+  RAD <- state$angle[[length(state$angle)]]*(pi/180)
+  
+  if(missing(n)){
+    state$x[[length(state$x)+1]] <- state$x[[length(state$x)]]-cos(RAD)
+    state$y[[length(state$y)+1]] <- state$y[[length(state$y)]]-sin(RAD)
+  }else{
+    state$x[[length(state$x)+1]] <- state$x[[length(state$x)]]-n*cos(RAD)
+    state$y[[length(state$y)+1]] <- state$y[[length(state$y)]]-n*sin(RAD)
+  }
+  BIOME$state <- state
+  TRACE()
+  REMEMBER()
+  TURTLE()
+}
+```
+
+```{r CLEARSCREEN}
+CLEARSCREEN <- function(){
+  
+  plot.new()
+  plot.window(xlim = c(-50, 50), ylim = c(-50, 50), pty = "s")
+  REMEMBER()
+  
+  state <- BIOME$state
+  state$angle[[length(state$angle)]] <- 90
+  BIOME$state <- state
+  
+  HOME()
+}
+```
+
+## Optimization Goals
+
+-   Only optionally draw the plot every single step
+    -   for example: some switch in TRACE function and TURTLE function - if(memory_saver == 1)if(length(state\$x)%%20 == 0) {lines()} else {}}
+    -   Adjustable memory_saver function with 3 stages: on, off, and intermittent
+-   Larger plot.window (or adjust step length)
+
+### Optimization
+
+Memorysaver takes ON (requires to manually call TRACE() after movement inputs), LIMIT (only redraws the plot after every 20 movement iterations) and OFF as arguments.
+
+```{r MSAVER}
+MSAVER <- function(MODE){
+  state <- BIOME$state
+  
+  if(MODE == "ON"){
+    state$savemode <- "ON"
+  }else if(MODE == "LIMIT"){
+    state$savemode <- "LIMIT"
+  }else{
+    state$savemode <- "OFF"
+  }
+  
+  BIOME$state <- state
+}
+```
+
+In order for MSAVER to work properly it is advisable to use STATERASE() first:
+
+```{r STATERASE}
+STATERASE <- function(){
+  savestate <- BIOME$savestate
+  
+  state <- BIOME$state
+  
+  savestate[[length(savestate)+1]] <- state
+  
+  BIOME$savestate <- savestate
+  
+  BIOME$state <- list()
+  HELLO()
+  TURTLE()
+}
+```
+
+Now we need to also update the functions, so that drawing plots and the turtle behaves accordingly:
